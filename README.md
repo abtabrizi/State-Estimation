@@ -3,3 +3,5 @@ Project repo for ME8135
 Prof: Dr. Sajad Saeedi  
 Author: Arash Tabrizi  
 Toronto Metropolitan University, ON, CA  
+# A1 Solutions  
+Please refer to A1 folder  
