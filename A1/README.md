@@ -1,2 +1,2 @@
-Contains the solution PDF and python scripts  
-Summer of 2023, TMU
+Contains the solution PDF (SolA1_Arash.pdf) and corresponding python notebooks  
+Summer of 2023, Graduate Studies  
