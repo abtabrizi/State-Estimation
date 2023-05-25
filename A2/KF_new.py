@@ -2,7 +2,6 @@ import pygame
 import numpy as np
 import imageio.v2 as imageio
 import os
-from scipy.stats import chi2
 
 # Initialize Pygame
 pygame.init()
@@ -29,11 +28,13 @@ H = np.array([[1, 0], [0, 2]])  # Measurement matrix
 x = np.array([[0], [0]])  # Initial state [x, y]
 P = np.array([[0, 0], [0, 0]])  # Initial covariance matrix
 
-frame_images = [] #List to store frame image filenames
+frame_images = []  # List to store frame image filenames
 frame_count = 0
 
 ground_truth_positions = []
 measured_positions = []
+covariance_positions = []
+
 
 # Kalman Filter function
 def kalman_filter(x, P, z, u):
@@ -50,20 +51,26 @@ def kalman_filter(x, P, z, u):
 
     return x, P
 
+
 # Draw x and y axis
 def draw_axis():
     pygame.draw.line(screen, (0, 0, 0), (0, height // 2), (width, height // 2), 2)  # x-axis
     pygame.draw.line(screen, (0, 0, 0), (width // 2, 0), (width // 2, height), 2)  # y-axis
-    pygame.draw.circle(screen, (0, 0, 0), (width // 2, height // 2), 2) # origin 
-    
+    pygame.draw.circle(screen, (0, 0, 0), (width // 2, height // 2), 2)  # origin
+
+
+# Draw covariance ellipse
 def draw_ellipse(center, covariance_matrix):
     eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
     angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
     major_axis = np.sqrt(eigenvalues[0])
     minor_axis = np.sqrt(eigenvalues[1])
 
-    pygame.draw.ellipse(screen, (255, 0, 0), (center[0] - major_axis, center[1] - minor_axis, 2 * major_axis, 2 * minor_axis), 2)
-    pygame.draw.line(screen, (255, 0, 0), center, (center[0] + major_axis * np.cos(angle), center[1] + major_axis * np.sin(angle)), 2)
+    pygame.draw.ellipse(screen, (255, 0, 0),
+                        (center[0] - major_axis, center[1] - minor_axis, 2 * major_axis, 2 * minor_axis), 2)
+    pygame.draw.line(screen, (255, 0, 0), center,
+                     (center[0] + major_axis * np.cos(angle), center[1] + major_axis * np.sin(angle)), 2)
+
 
 # Main simulation loop
 running = True
@@ -80,7 +87,8 @@ while running:
     # Store ground truth and measured positions
     ground_truth_positions.append((int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100)))
     measured_positions.append((int(x[0, 0] * 100) + width // 2 + np.random.normal(0, 0.05),
-                               height // 2 - int(x[1, 0] * 100) + np.random.normal(0, 0.075))) 
+                               height // 2 - int(x[1, 0] * 100) + np.random.normal(0, 0.075)))
+    covariance_positions.append((int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100), P))
 
     # Draw the robot's position
     screen.blit(bot_img, (int(x[0, 0] * 100) + width // 2, int(x[1, 0] * 100) + height // 2))
@@ -90,20 +98,25 @@ while running:
         pygame.draw.lines(screen, (0, 255, 0), False, ground_truth_positions, 3)
 
     # Draw the measured trajectory
-    if len(ground_truth_positions) >= 2:
+    if len(measured_positions) >= 2:
         pygame.draw.lines(screen, (0, 0, 255), False, measured_positions, 3)
-    
-    # Calculate the covariance ellipse parameters
-    eigenvalues, eigenvectors = np.linalg.eig(P)
-    scale = np.sqrt(chi2.ppf(0.95, 2))
-    covariance_ellipse = scale * eigenvectors @ np.diag(np.sqrt(eigenvalues)) @ eigenvectors.T
 
-    # Draw the covariance ellipse
-    draw_ellipse((int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100)), covariance_ellipse)
+    # Draw the covariance ellipse trajectory
+    for pos in covariance_positions:
+        draw_ellipse(pos[:2], pos[2])
+
+    # Draw legend
+    legend_font = pygame.font.SysFont(None, 20)
+    ground_truth_legend = legend_font.render('Ground Truth', True, (0, 255, 0))
+    measured_legend = legend_font.render('Measured', True, (0, 0, 255))
+    covariance_legend = legend_font.render('Covariance', True, (255, 0, 0))
+    screen.blit(ground_truth_legend, (10, 10))
+    screen.blit(measured_legend, (10, 30))
+    screen.blit(covariance_legend, (10, 50))
 
     pygame.display.flip()  # Update the display
-    clock.tick(1)  # Limit the frame rate to 1 FPS
-
+    clock.tick(1)  # Limit the frame rate to 10 FPS
+	
     if frame_count < 10:
         frame_img_filename = f'frame_{frame_count:03d}.png'
         pygame.image.save(screen, frame_img_filename)
@@ -113,7 +126,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            
+
 # Create GIF animation
 gif_filename = 'animation.gif'
 images = [imageio.imread(image) for image in frame_images]
