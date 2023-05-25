@@ -33,8 +33,6 @@ frame_count = 0
 
 ground_truth_positions = []
 measured_positions = []
-covariance_ellipse = None
-
 
 # Kalman Filter function
 def kalman_filter(x, P, z, u):
@@ -51,6 +49,14 @@ def kalman_filter(x, P, z, u):
 
     return x, P
 
+# Calculate the confidence ellipse
+def calculate_ellipse(P, confidence_level):
+    eigenvalues, eigenvectors = np.linalg.eig(P)
+    angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
+    chi_squared = np.sqrt(5.991)  # Chi-squared value for 2 degrees of freedom and 95% confidence level
+    width = 2 * np.sqrt(chi_squared * eigenvalues[0])
+    height = 2 * np.sqrt(chi_squared * eigenvalues[1])
+    return width, height, angle
 
 # Draw x and y axis
 def draw_axis():
@@ -59,17 +65,13 @@ def draw_axis():
     pygame.draw.circle(screen, (0, 0, 0), (width // 2, height // 2), 2)  # origin
 
 
-# Draw covariance ellipse
-def draw_ellipse(center, covariance_matrix):
-    eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
-    angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
-    major_axis = np.sqrt(eigenvalues[0])
-    minor_axis = np.sqrt(eigenvalues[1])
-
-    pygame.draw.ellipse(screen, (255, 0, 0),
-                        (center[0] - major_axis, center[1] - minor_axis, 2 * major_axis, 2 * minor_axis), 2)
-    pygame.draw.line(screen, (255, 0, 0), center,
-                     (center[0] + major_axis * np.cos(angle), center[1] + major_axis * np.sin(angle)), 2)
+# Draw ellipse
+def draw_ellipse(position, width, height, angle):
+    rect = pygame.Rect(0, 0, width, height)
+    ellipse_surface = pygame.Surface(rect.size, pygame.SRCALPHA)
+    pygame.draw.ellipse(ellipse_surface, (255, 0, 0), rect, 2)
+    rotated_surface = pygame.transform.rotate(ellipse_surface, np.degrees(angle))
+    screen.blit(rotated_surface, position)
 
 
 # Main simulation loop
@@ -88,7 +90,6 @@ while running:
     ground_truth_positions.append((int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100)))
     measured_positions.append((int(x[0, 0] * 100) + width // 2 + np.random.normal(0, 0.05),
                                height // 2 - int(x[1, 0] * 100) + np.random.normal(0, 0.075)))
-    covariance_ellipse = (int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100), P)
 
     # Draw the robot's position
     screen.blit(bot_img, (int(x[0, 0] * 100) + width // 2, int(x[1, 0] * 100) + height // 2))
@@ -101,9 +102,9 @@ while running:
     if len(measured_positions) >= 2:
         pygame.draw.lines(screen, (0, 0, 255), False, measured_positions, 3)
 
-    # Draw the covariance ellipse trajectory
-    if covariance_ellipse:
-        draw_ellipse(covariance_ellipse[:2], covariance_ellipse[2])
+    # Calculate and draw the confidence ellipse
+    ellipse_width, ellipse_height, ellipse_angle = calculate_ellipse(P, confidence_level=0.95)
+    draw_ellipse((int(x[0, 0] * 100) + width // 2, int(x[1, 0] * 100) + height // 2), ellipse_width, ellipse_height, ellipse_angle)
 
     # Draw legend
     legend_font = pygame.font.SysFont(None, 20)
