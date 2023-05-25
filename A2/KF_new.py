@@ -2,6 +2,7 @@ import pygame
 import numpy as np
 import imageio.v2 as imageio
 import os
+from scipy.stats import chi2
 
 # Initialize Pygame
 pygame.init()
@@ -55,12 +56,19 @@ def draw_axis():
     pygame.draw.line(screen, (0, 0, 0), (width // 2, 0), (width // 2, height), 2)  # y-axis
     pygame.draw.circle(screen, (0, 0, 0), (width // 2, height // 2), 2) # origin 
     
+def draw_ellipse(center, covariance_matrix):
+    eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+    angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
+    major_axis = np.sqrt(eigenvalues[0])
+    minor_axis = np.sqrt(eigenvalues[1])
+
+    pygame.draw.ellipse(screen, (255, 0, 0), (center[0] - major_axis, center[1] - minor_axis, 2 * major_axis, 2 * minor_axis), 2)
+    pygame.draw.line(screen, (255, 0, 0), center, (center[0] + major_axis * np.cos(angle), center[1] + major_axis * np.sin(angle)), 2)
 
 # Main simulation loop
 running = True
 while running:
     screen.fill((255, 255, 255))  # Clear the screen
-    
 
     # Draw x and y axis
     draw_axis()
@@ -75,27 +83,27 @@ while running:
                                height // 2 - int(x[1, 0] * 100) + np.random.normal(0, 0.075))) 
 
     # Draw the robot's position
-    #pygame.draw.circle(screen, (255, 0, 0), (int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100)), 5)
     screen.blit(bot_img, (int(x[0, 0] * 100) + width // 2, int(x[1, 0] * 100) + height // 2))
 
-	# Draw the ground truth trajectory
+    # Draw the ground truth trajectory
     if len(ground_truth_positions) >= 2:
         pygame.draw.lines(screen, (0, 255, 0), False, ground_truth_positions, 3)
 
     # Draw the measured trajectory
     if len(ground_truth_positions) >= 2:
         pygame.draw.lines(screen, (0, 0, 255), False, measured_positions, 3)
-        
-    # Draw legend
-    legend_font = pygame.font.SysFont(None, 20)
-    ground_truth_legend = legend_font.render('Ground Truth', True, (0, 255, 0))
-    measured_legend = legend_font.render('Measured', True, (0, 0, 255))
-    screen.blit(ground_truth_legend, (10, 10))
-    screen.blit(measured_legend, (10, 30))
     
+    # Calculate the covariance ellipse parameters
+    eigenvalues, eigenvectors = np.linalg.eig(P)
+    scale = np.sqrt(chi2.ppf(0.95, 2))
+    covariance_ellipse = scale * eigenvectors @ np.diag(np.sqrt(eigenvalues)) @ eigenvectors.T
+
+    # Draw the covariance ellipse
+    draw_ellipse((int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100)), covariance_ellipse)
+
     pygame.display.flip()  # Update the display
-    clock.tick(1)  # Limit the frame rate to 10 FPS
-    
+    clock.tick(1)  # Limit the frame rate to 1 FPS
+
     if frame_count < 10:
         frame_img_filename = f'frame_{frame_count:03d}.png'
         pygame.image.save(screen, frame_img_filename)
