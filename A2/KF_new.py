@@ -33,7 +33,7 @@ frame_count = 0
 
 ground_truth_positions = []
 measured_positions = []
-covariance_positions = []
+covariance_ellipse = None
 
 
 # Kalman Filter function
@@ -88,7 +88,7 @@ while running:
     ground_truth_positions.append((int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100)))
     measured_positions.append((int(x[0, 0] * 100) + width // 2 + np.random.normal(0, 0.05),
                                height // 2 - int(x[1, 0] * 100) + np.random.normal(0, 0.075)))
-    covariance_positions.append((int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100), P))
+    covariance_ellipse = (int(x[0, 0] * 100) + width // 2, height // 2 - int(x[1, 0] * 100), P)
 
     # Draw the robot's position
     screen.blit(bot_img, (int(x[0, 0] * 100) + width // 2, int(x[1, 0] * 100) + height // 2))
@@ -102,8 +102,8 @@ while running:
         pygame.draw.lines(screen, (0, 0, 255), False, measured_positions, 3)
 
     # Draw the covariance ellipse trajectory
-    for pos in covariance_positions:
-        draw_ellipse(pos[:2], pos[2])
+    if covariance_ellipse:
+        draw_ellipse(covariance_ellipse[:2], covariance_ellipse[2])
 
     # Draw legend
     legend_font = pygame.font.SysFont(None, 20)
