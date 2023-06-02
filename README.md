@@ -7,4 +7,5 @@ Toronto Metropolitan University, ON, CA
 Please refer to A1 folder  
 # A2 Solutions  
 Please refer to A2 folder 
-![Animation Q1](A2/animation_1.gif)
+## Q1 Animation:
+<img src = "A2/animation_1.gif" width = "300" alt "Animation Q1">
