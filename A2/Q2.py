@@ -3,13 +3,12 @@ import math
 import numpy as np
 from numpy import dot, array, eye, zeros, diag
 from numpy.linalg import inv, norm
-import matplotlib.pyplot as plt
 import imageio.v2 as imageio
 import os
 
 # User Settings
 Noise = True 
-Linear = False # set to 'False' when simulating part (b)
+Linear = False # set to 'True' when simulating part (a)
 Ellipse = True 
 if Linear == True:
     part = "a"
@@ -23,7 +22,7 @@ pygame.init()
 scale = 800
 screen = pygame.display.set_mode((scale, scale))
 sc_f = int(scale/20)
-cov_size = 20
+cov_size = 20  # This should be changed to 300 if Linear = True
 
 # Draw landmark at (10, 10)
 Landmark = pygame.Surface((10, 10))
@@ -130,7 +129,8 @@ def kf_correct_part_b(X, P, Y, G, R_p, IM):
         inverse = inv(IS)
     K = dot(P, dot(G.T, inverse))
     X = X + dot(K, (Y - IM))
-    P = P - dot(K, dot(G, P))
+    P = (P - dot(K, dot(G, P)))
+    #P = (eye(2) - dot(K, C)) * P
     return (X, P, K, IM, IS)
 
 
@@ -187,13 +187,12 @@ while running:
             dist_norm_n = dist_norm + n_w
             phi = theta + math.pi/2.0
             phi_n = phi + n_phi
-            #print('Before %2.2f %2.2f %2.2f \n' %(X[0, 0], X[1, 0], dist_norm))
+            
 
-            #Update covariance matrix R
+            # Update R
             delg_delw = array([math.cos(phi), math.sin(phi)])
             delg_delphi = dist_norm* array([-math.sin(phi), math.cos(phi)])
-            #n_kp = transpose(array([delg_delw, delg_delphi]))
-            #R_p = cov(n_kp, bias=True)
+            
 
             n_k = array([ww*delg_delw[0]+wphi*delg_delphi[0], ww*delg_delw[1]+wphi*delg_delphi[1]])
             R_p = diag([n_k[0], n_k[1]])
@@ -203,7 +202,6 @@ while running:
             G1 = array([(X[0, 0] - 10.0)*math.cos(phi), (X[1,0] - 10.0)*math.cos(phi)])
             G2 = array([(X[0, 0] - 10.0)*math.sin(phi), (X[1,0] - 10.0)*math.sin(phi)])
             G = (1.0/dist_norm)*array([G1, G2])
-            #G = G.reshape(2, 2)
             X, P, K, IM, IS = kf_correct_part_b(X, P, Z, G, R_p, IM)
             true_line[1] = (int(X[0, 0]*sc_f), int(X[1, 0]*sc_f))
             pygame.draw.lines(screen, (0, 0, 255), False, true_line, 3)
@@ -219,21 +217,20 @@ while running:
     dist = dist[:,0]
     dist_norm = norm(dist, ord = 2)
 
-    #print('Angle %2.2f Norm: %2.2f X: %2.2f Y: %2.2f' %(theta*180.0/math.pi, dist_norm, X[0][0], X[1][0]))
     
     if theta < - 0:
         theta = math.pi*2.0
 
     screen.blit(robot, (int(Xx), int(Xy)))
 
-    #print('CovX %2.4f CovY %2.4f' %(Px, Py))
     if Ellipse == True:
         try:
+            #screen.fill((255, 255, 255))
             pygame.draw.ellipse(screen, (0, 255, 0), (int(Xx-(Px*cov_size/2)), int(Xy-(Py*cov_size/2)), int(Px*cov_size), int(Py*cov_size)), 1)
             # ellipse_r = pygame.transform.rotate(image, 45)
             # screen.blit(ellipse_r, (int(rx), int(ry)))
         except:
-            print('CovX %2.4f CovY %2.4f' %(Px, Py))
+            print('We are here!')
 
     n_phi = np.random.normal(0, wphi)
     Bearing = (theta + math.pi/2.0 + n_phi)*180.0/math.pi
