@@ -6,7 +6,7 @@ from numpy.linalg import inv, norm
 import imageio.v2 as imageio
 import os
 
-# User Settings
+# User settings
 Noise = True 
 Linear = False # set to 'True' when simulating part (a)
 Ellipse = True 
@@ -19,10 +19,10 @@ else:
 pygame.init()
 
 # Set up the display & colors
-scale = 800
-screen = pygame.display.set_mode((scale, scale))
-sc_f = int(scale/20)
-cov_size = 20  # This should be changed to 300 if Linear = True
+res = 800
+gameDisplay = pygame.display.set_mode((res, res))
+sc_f = int(res/20)
+cov_size = 20  # this should be changed to 300 if 'Linear' is set to 'True'
 
 # Draw landmark at (10, 10)
 Landmark = pygame.Surface((10, 10))
@@ -35,25 +35,26 @@ font = pygame.font.Font(None, 25)
 # Legend location and settings  
 textX = 10
 textY = 10
-screen.fill((255, 255, 255))
-screen.blit(Landmark, (int(scale/2), int(scale/2)))
+gameDisplay.fill((255, 255, 255))
+gameDisplay.blit(Landmark, (int(res/2), int(res/2)))
 Q_text = font.render("Part (" + str(part) + ") Simulation", True, (0, 0, 0))
-screen.blit(Q_text, (textX, textY+20))
+gameDisplay.blit(Q_text, (textX, textY+20))
 
 
 # Draw robot
-robot = pygame.Surface((3, 3))
+robot = pygame.Surface((4, 4))
 robot.fill((255, 0, 0))
 
 # Covariance ellipse settings
-image = pygame.Surface([scale,scale], pygame.SRCALPHA, 32)
+image = pygame.Surface([res,res], pygame.SRCALPHA, 32)
 image = image.convert_alpha()
 
-# Initializations
-x0 = 6.0
+# We start robot at (6, 10), this is arbitrary 
+x0 = 6.0 
 y0 = 10.0
+
+# Initializations
 theta = math.pi/2.0
-thetaprev = 0
 X = array([[x0, y0]]).T
 P = zeros(2)
 
@@ -61,7 +62,7 @@ P = zeros(2)
 r = 0.1
 rL = 0.2
 T = float(1/8)
-F = eye(2) #F remains identity matrix here
+A = eye(2) # A is state transition matrix
 ur = 4.75
 ul = 5.25
 u_w = (ur+ul)/2.0
@@ -93,13 +94,13 @@ frames = [] # to store image frames
 true_line = [(x0*sc_f, y0*sc_f), (x0, y0)]
 
 # KF predictor definition
-def kf_predict(X, P, F, Q_p, U):
+def kf_predict(X, P, A, Q_p, U):
     noise_x = np.random.normal(0, ww)
     noise_y = np.random.normal(0, ww)
     noise = array([[noise_x, noise_y]]).T
     X_dot = U + noise
-    X = dot(F, X) + (T*X_dot)
-    P = dot(F, dot(P, F.T)) + Q_p
+    X = dot(A, X) + (T*X_dot)
+    P = dot(A, dot(P, A.T)) + Q_p
     return X, P
 
 # KF corrector definition for part (a)
@@ -146,7 +147,7 @@ while running:
     i += 1 
     
     # Capture the screen as image frames
-    frame = pygame.surfarray.array3d(screen)
+    frame = pygame.surfarray.array3d(gameDisplay)
     frames.append(frame)
     
     # End simulation if simulation window closed
@@ -166,7 +167,7 @@ while running:
     w_k = array([ww*delf_delw[0]+wphi*delf_delphi[0], ww*delf_delw[1]+wphi*delf_delphi[1]])
     Q_p = diag([w_k[0], w_k[1]])
 
-    X, P = kf_predict(X, P, F, Q_p, U)
+    X, P = kf_predict(X, P, A, Q_p, U)
 
     if i%8 == 0:
         if Linear == True:
@@ -176,7 +177,7 @@ while running:
             Z = dot(C, X) + n
             X, P, K, IM, IS = kf_correct(X, P, Z, C, R)
             true_line[1] = (int(X[0][0]*sc_f), int(X[1][0]*sc_f))
-            pygame.draw.lines(screen, (0, 0, 255), False, true_line, 3)
+            pygame.draw.lines(gameDisplay, (0, 0, 255), False, true_line, 3)
             true_line[0] = true_line[1]
         else:
             dist = X - L
@@ -204,7 +205,7 @@ while running:
             G = (1.0/dist_norm)*array([G1, G2])
             X, P, K, IM, IS = kf_correct_part_b(X, P, Z, G, R_p, IM)
             true_line[1] = (int(X[0, 0]*sc_f), int(X[1, 0]*sc_f))
-            pygame.draw.lines(screen, (0, 0, 255), False, true_line, 3)
+            pygame.draw.lines(gameDisplay, (0, 0, 255), False, true_line, 3)
             true_line[0] = true_line[1]
 
     Xx = (X[0][0]*sc_f)
@@ -221,14 +222,13 @@ while running:
     if theta < - 0:
         theta = math.pi*2.0
 
-    screen.blit(robot, (int(Xx), int(Xy)))
+    gameDisplay.blit(robot, (int(Xx), int(Xy)))
 
     if Ellipse == True:
         try:
-            #screen.fill((255, 255, 255))
-            pygame.draw.ellipse(screen, (0, 255, 0), (int(Xx-(Px*cov_size/2)), int(Xy-(Py*cov_size/2)), int(Px*cov_size), int(Py*cov_size)), 1)
-            # ellipse_r = pygame.transform.rotate(image, 45)
-            # screen.blit(ellipse_r, (int(rx), int(ry)))
+            #gameDisplay.fill((255, 255, 255)) # un-comment if we want to visual real-time cov ellipse updates only
+            pygame.draw.ellipse(gameDisplay, (0, 255, 0), (int(Xx-(Px*cov_size/2)), int(Xy-(Py*cov_size/2)), int(Px*cov_size), int(Py*cov_size)), 1)
+
         except:
             print('We are here!')
 
@@ -238,9 +238,9 @@ while running:
         Bearing = Bearing - 360
     Bearing_print = '{:03.2f}'.format(Bearing)
     B_text = font.render("Bearing: " + Bearing_print, True, (0, 0, 0))
-    screen.fill((255, 255, 255), (0, scale//12, scale, scale//6))
-    screen.blit(Landmark, (int(scale/2), int(scale/2)))
-    screen.blit(B_text, (textX, textY+60))
+    gameDisplay.fill((255, 255, 255), (0, res//12, res, res//6))
+    gameDisplay.blit(Landmark, (int(res/2), int(res/2)))
+    gameDisplay.blit(B_text, (textX, textY+60))
 
 
     pygame.display.update()
