@@ -8,4 +8,4 @@ Please refer to A1 folder
 # A2 Solutions  
 Please refer to A2 folder 
 ## Q1 Animation:
-<img src = "A2/animation_1.gif" width = "300" alt "Animation Q1">
+<img src="A2/animation_1.gif" width="300" alt="Q1">
