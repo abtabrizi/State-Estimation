@@ -56,15 +56,15 @@ coordinate_pred_y=[]
 def my_robot(x, y):
     gameDisplay.blit(bot_img, (x, y))
 
-# Calculate the joint PDF for a two-dimensional Gaussian densityribution
-def joint_density(x,y):
+# Calculate the joint PDF for a two-dimensional Gaussian distanceribution
+def joint_distance(x,y):
 
     # Fomulation
-    density = (1.0/(2*np.pi*0.05*0.075))*np.exp(-(((x - coordinate_measure[0][0])**2/(2*0.05*0.05))+((y - coordinate_measure[1][0])**2/(2*0.075*0.075))))
+    distance = (1.0/(2*np.pi*0.05*0.075))*np.exp(-(((x - coordinate_measure[0][0])**2/(2*0.05*0.05))+((y - coordinate_measure[1][0])**2/(2*0.075*0.075))))
     # Add a small value to avoid division by zero
-    density = density + 1e-9 
+    distance = distance + 1e-9 
     
-    return density
+    return distance
 
 # Particle generation 
 def create_particles():
@@ -73,7 +73,7 @@ def create_particles():
     N_particles = 100
     particles = []
     
-    # Generate particles by sampling from a Gaussian densityribution
+    # Generate particles by sampling from a Gaussian distanceribution
     particles_x = np.random.normal(position[0][0], 0.05, N_particles)
     particles_y = np.random.normal(position[1][0], 0.075, N_particles)
     
@@ -84,7 +84,7 @@ def create_particles():
     return particles
 
 # Madow's resampling algorithm 
-def resampling(particles, density):
+def resampling(particles, distance):
     
     N=len(particles)
     resamp_particles = []
@@ -92,15 +92,15 @@ def resampling(particles, density):
     beta = 0.0
     
     for i in range(0,N):
-        density[0,i]=joint_density(particles[i][0][0],particles[i][1][0])
+        distance[0,i]=joint_distance(particles[i][0][0],particles[i][1][0])
         
-    density=density/np.sum(density)
-    mw = density.max()
+    distance=distance/np.sum(distance)
+    mw = distance.max()
 
     for i in range(N):
         beta += random.random() * 2.0 * mw
-        while beta > density[0][index]:
-            beta -= density[0][index]
+        while beta > distance[0][index]:
+            beta -= distance[0][index]
             index = (index + 1) % N
                   
         resamp_particles.append(np.array([[particles[index][0][0]],[particles[index][1][0]]]))
@@ -110,26 +110,26 @@ def resampling(particles, density):
 # Calculate the weighted mean of particles
 def get_weight(particles):
 
-        density=np.zeros((1,len(particles)))
+        distance=np.zeros((1,len(particles)))
 
         new_x = 0
         new_y = 0
         
         # Calculate the measurement probabilities for each particle
         for i in range(0,len(particles)):
-            density[0,i]=joint_density(particles[i][0][0],particles[i][1][0])
+            distance[0,i]=joint_distance(particles[i][0][0],particles[i][1][0])
 
         # Normalize the weights
-        density=density/np.sum(density)
+        distance=distance/np.sum(distance)
 
         # Calculate the weighted mean
         for i in range(0, len(particles)):	
-            new_x = new_x + density[0,i] * particles[i][0][0]
-            new_y = new_y + density[0,i] * particles[i][1][0]
+            new_x = new_x + distance[0,i] * particles[i][0][0]
+            new_y = new_y + distance[0,i] * particles[i][1][0]
 
         pose=np.array([[new_x],[new_y]])
  
-        return pose, density
+        return pose, distance
 
 # State transition definition (linear motion model)
 def state_trans_model(position, particles):
@@ -193,7 +193,7 @@ while not crashed:
         if event.type == pygame.QUIT:
             crashed = True
     
-    # Stop simulation after certain densityance reached
+    # Stop simulation after certain distanceance reached
     if t >= 60: 
         break
     
@@ -206,8 +206,8 @@ while not crashed:
     
     if(t%8==0):
         measurement_model()
-        coordinate_particle,density=get_weight(particles)
-        particles=resampling(particles, density)
+        coordinate_particle,distance=get_weight(particles)
+        particles=resampling(particles, distance)
 
     ##################################### Visualization Settings ##################################### 
     # Clear the screen
