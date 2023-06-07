@@ -62,7 +62,7 @@ def measurement_prob(x,y):
     # Fomulation
     dist = (1.0/(2*np.pi*0.05*0.075))*np.exp(-(((x - coordinate_measure[0][0])**2/(2*0.05*0.05))+((y - coordinate_measure[1][0])**2/(2*0.075*0.075))))
     # Add a small value to avoid division by zero
-    dist = dist + 1e-9 #get rid of 0
+    dist = dist + 1e-9 
     
     return dist
 
@@ -83,7 +83,7 @@ def create_particles():
     
     return particles
 
-
+# Madow's resampling algorithm 
 def resampling(particles, dist):
     
     N=len(particles)
@@ -185,7 +185,6 @@ def get_stats(x,y):
     
     return np.mean(x),np.std(x),np.mean(y),np.std(y)
 
-
 # Main simulation loop
 while not crashed:
     
@@ -210,6 +209,7 @@ while not crashed:
         coordinate_particle,dist=get_weight(particles)
         particles=resampling(particles, dist)
 
+    ##################################### Visualization Settings ##################################### 
     # Clear the screen
     gameDisplay.fill(white)
     # Color settings
@@ -263,6 +263,8 @@ while not crashed:
     gameDisplay.blit(pred_legend, (750, 640))
     gameDisplay.blit(pos_meas_legend, (750, 660))
     
+    ############################### End of Visualization Settings ###############################
+    
     # Update the display
     pygame.display.update()
     # Limit the frame rate to 4 FPS
@@ -278,7 +280,7 @@ while not crashed:
     # Update counter    
     t+=1 
     
-# Plot settings for trajectory plots
+# Plots 
 plt.plot(coordinate_measure_x, coordinate_measure_y, label='Measurement')
 plt.plot(coordinate_pred_x, coordinate_pred_y, label='Mean Particle Position')
 plt.xlabel("Iteation")
