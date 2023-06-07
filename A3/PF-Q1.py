@@ -55,26 +55,31 @@ bot_img = pygame.transform.rotate(bot_img, -90)
 # Function to assign image to robot
 def car(x, y):
     gameDisplay.blit(bot_img, (x, y))
-    
+
+# Calculate the joint PDF for a two-dimensional Gaussian distribution
 def measurement_prob(x,y):
 
+    # Fomulation
     dist = (1.0/(2*np.pi*0.05*0.075))*np.exp(-(((x - coordinate_measure[0][0])**2/(2*0.05*0.05))+((y - coordinate_measure[1][0])**2/(2*0.075*0.075))))
-    
+    # Add a small value to avoid division by zero
     dist = dist + 1e-9 #get rid of 0
     
     return dist
 
-
+# Particle generation 
 def create_particles():
     global position
     
-    N_particles=100
-    particles=[]
-    particles_x=np.random.normal(position[0][0],0.05,N_particles)
-    particles_y=np.random.normal(position[1][0],0.075,N_particles)
+    N_particles = 100
+    particles = []
     
-    for i in range(0,N_particles):
-        particles.append(np.array([[particles_x[i]],[particles_y[i]]]))  
+    # Generate particles by sampling from a Gaussian distribution
+    particles_x = np.random.normal(position[0][0], 0.05, N_particles)
+    particles_y = np.random.normal(position[1][0], 0.075, N_particles)
+    
+    # Create particle arrays and append to particles list
+    for i in range(0, N_particles):
+        particles.append(np.array([[particles_x[i]], [particles_y[i]]]))  
     
     return particles
 
@@ -102,21 +107,22 @@ def resampling(particles, dist):
         
     return resamp_particles
 
-
+# Calculate the weighted mean of particles
 def get_weight(particles):
 
         dist=np.zeros((1,len(particles)))
 
         new_x = 0
         new_y = 0
-
+        
+        # Calculate the measurement probabilities for each particle
         for i in range(0,len(particles)):
             dist[0,i]=measurement_prob(particles[i][0][0],particles[i][1][0])
 
-
+        # Normalize the weights
         dist=dist/np.sum(dist)
 
-        
+        # Calculate the weighted mean
         for i in range(0, len(particles)):	
             new_x = new_x + dist[0,i] * particles[i][0][0]
             new_y = new_y + dist[0,i] * particles[i][1][0]
@@ -125,7 +131,7 @@ def get_weight(particles):
  
         return pose, dist
 
-# State transition definition 
+# State transition definition (linear motion model)
 def state_trans_model(position, particles):
     global coordinate_gt
     x=[]
@@ -144,10 +150,9 @@ def state_trans_model(position, particles):
     # Process noise vector
     w_k=np.array([[np.random.normal(0,0.1)],[np.random.normal(0,0.15)]])
     
-    # State transition equation | Eq (10) in solution PDF
+    # State transition equation 
     new_posi = np.matmul(A,position) + np.matmul(B,u) + w_k*T
     # State transition model ground truth (no noise)
-    # Line 2 of Kalman Filter algorithm in Prob Robotics textbook (Table 3.1)
     coordinate_gt = np.matmul(A,position)+np.matmul(B,u)
     
     for i in range(0,len(particles)):
@@ -171,7 +176,8 @@ def measurement_model():
     z=np.matmul(C,coordinate_gt) + n_k
     
     coordinate_measure=z   
-    
+
+# Calculate mean and standard deviation of the coordinates
 def get_stats(x,y):
 
     x=np.array(x)
