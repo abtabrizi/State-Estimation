@@ -29,6 +29,7 @@ cov_width=[]
 cov_hight=[]
 position=np.array([[0],[0]]) # initial state vector
 coordinate_measure=position
+new_posi_gt=position
 p_0=np.array([[0,0],[0,0]]) # initial cov matrix
 point_prev=[[0],[0]]
 distance_trav = 0.0 # initial distance
@@ -58,7 +59,7 @@ def state_trans_model(position):
     # Time step
     T=1/8
     # Control matrix
-    B=np.array([[(r/2)*T,0],[(r/2)*T,0]])
+    B=np.array([[(r/2)*T,(r/2)*T],[(r/2)*T,(r/2)*T]])
     # Control vector 
     u=np.array([[1],[1]])
     # Process noise vector
@@ -68,7 +69,7 @@ def state_trans_model(position):
     new_posi = np.matmul(A,position) + np.matmul(B,u) + w_k*T
     # State transition model ground truth (no noise)
     # Line 2 of Kalman Filter algorithm in Prob Robotics textbook (Table 3.1)
-    new_posi_gt = np.matmul(A,position)+np.matmul(B,u)
+    new_posi_gt = np.matmul(A,new_posi_gt)+np.matmul(B,u)
     
     return new_posi
     
@@ -152,7 +153,7 @@ while not crashed:
     get_new_cov()
     
     # Stop simulation after certain distance reached
-    if t >= 81: 
+    if t >= 41: 
         break
 
     if(t%8==0):
@@ -218,7 +219,7 @@ while not crashed:
     clock.tick(4)
     
     # Gif animation setup 
-    if frame_count < 81:
+    if frame_count < 41:
         frame_img_filename = f'frame_{frame_count:03d}.png'
         pygame.image.save(gameDisplay, frame_img_filename)
         frame_images.append(frame_img_filename)
