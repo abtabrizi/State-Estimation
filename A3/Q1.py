@@ -6,6 +6,7 @@ Created on Tue Jun  6 23:50:51 2023
 A3 Question 1 - Linear motion & observation models with PF
 """
 import pygame
+from pygame.locals import *
 import numpy as np
 import matplotlib.pyplot as plt 
 import random
@@ -60,7 +61,7 @@ def my_robot(x, y):
 def joint_distance(x,y):
 
     # Fomulation
-    distance = (1.0/(2*np.pi*0.05*0.075))*np.exp(-(((x - coordinate_measure[0][0])**2/(2*0.05*0.05))+((y - coordinate_measure[1][0])**2/(2*0.075*0.075))))
+    distance = (1.0/(2*np.pi*0.005*0.075))*np.exp(-(((x - coordinate_measure[0][0])**2/(2*0.005*0.05))+((y - coordinate_measure[1][0])**2/(2*0.075*0.075))))
     # Add a small value to avoid division by zero
     distance = distance + 1e-9 
     
@@ -74,7 +75,7 @@ def create_particles():
     particles = []
     
     # Generate particles by sampling from a Gaussian distanceribution
-    particles_x = np.random.normal(position[0][0], 0.05, N_particles)
+    particles_x = np.random.normal(position[0][0], 0.005, N_particles)
     particles_y = np.random.normal(position[1][0], 0.075, N_particles)
     
     # Create particle arrays and append to particles list
@@ -127,9 +128,9 @@ def get_weight(particles):
             new_x = new_x + distance[0,i] * particles[i][0][0]
             new_y = new_y + distance[0,i] * particles[i][1][0]
 
-        pose=np.array([[new_x],[new_y]])
+        coord=np.array([[new_x],[new_y]])
  
-        return pose, distance
+        return coord, distance
 
 # State transition definition (linear motion model)
 def state_trans_model(position, particles):
@@ -157,7 +158,7 @@ def state_trans_model(position, particles):
     
     for i in range(0,len(particles)):
 
-            temp = np.matmul(A,particles[i]) + np.matmul(B,u) + w_k*T
+            temp = np.matmul(A,particles[i]) + np.matmul(B,u) + T*np.array([[np.random.normal(0,0.1)],[np.random.normal(0,0.15)]])
             particles[i]=temp
             x.append(temp[0][0])
             y.append(temp[1][0])
@@ -185,7 +186,7 @@ def get_stats(x,y):
     
     return np.mean(x),np.std(x),np.mean(y),np.std(y)
 
-# Main simulation loop
+################################ Main simulation loop ################################
 while not crashed:
     
     # Quit simulation if simulation window closed
@@ -210,21 +211,23 @@ while not crashed:
         particles=resampling(particles, distance)
 
     ##################################### Visualization Settings ##################################### 
-    # Clear the screen
-    gameDisplay.fill(white)
     # Color settings
     BLUE=(0,0,255)
     RED=(255,0,0)
     GREEN=(0,255,0)
     BROWN=(180,50,50)
+    WHITE=(255,255,255)
     
-    # Draw particles 
+    # Clear the screen
+    gameDisplay.fill(WHITE)
+    
+    # Draw particles in color RED
     for p in particles:        
         pygame.draw.rect(gameDisplay,RED,(p[0][0]*1000+50,(p[1][0]/2)*1000+50,2,2))
     
     # Draw cov ellipse
-    size = (mean_x*1000+50-(std_x*2000)/2, mean_y/2*1000+50-(2000*std_y)/2, std_x*2000, 2000*std_y)
-    pygame.draw.ellipse(gameDisplay, BROWN, size,1)  
+    radius = (mean_x*1000+50-(std_x*2000)/2, mean_y/2*1000+50-(2000*std_y)/2, std_x*2000, 2000*std_y)
+    pygame.draw.ellipse(gameDisplay, BROWN, radius, 2)  
     
     # Draw robot using desired image
     my_robot(coordinate_particle[0,0]*1000+50, (coordinate_particle[1,0]/2)*1000+50)
