@@ -59,15 +59,17 @@ coordinate_pred_y=[]
 cov_width=[]
 cov_hight=[]
 
-# Function to draw r
+# Function to draw my robot
 def my_robot(x, y):
     gameDisplay.blit(bot_img, (x, y))
 
+# Computes difference between angles
 def angle(a,b):
     
     return np.mod(a - b + math.pi, 2 * math.pi) - math.pi
 
-def convert_polar(p):
+# Converts cartesian coordinate system to polar form 
+def get_polar(p):
 
     rho = np.sqrt((p[0,0] - landmark[0,0])**2 + (p[1,0] - landmark[1,0])**2)
     phi = np.arctan2(p[1,0] - landmark[1,0], p[0,0] - landmark[0,0])
@@ -78,7 +80,7 @@ def convert_polar(p):
 # Calculate the joint PDF for a two-dimensional Gaussian distanceribution
 def joint_distance(x,y):
 
-    P = convert_polar(np.array([[x],[y],[0]]))
+    P = get_polar(np.array([[x],[y],[0]]))
     # Fomulation to get Euclidean distance
     distance = (1.0/(2*np.pi*0.01*0.1))*np.exp(-(((polar_measure[0,0] - P[0,0])**2/(2*0.1*0.1))+(angle(polar_measure[1,0],P[1,0])**2/(2*0.01*0.01))))
     # Add a small value to avoid division by zero
@@ -179,7 +181,6 @@ def state_trans_model(position, particles):
         
     # Control matrix
     B=np.array([[r*T*math.cos(position[2,0]),0],[r*T*math.sin(position[2,0]),0],[0,T*r/L]])
-    #B_gt=np.array([[r*T*math.cos(coordinate_gt[2,0]),0],[r*T*math.sin(coordinate_gt[2,0]),0],[0,T*r/L]])
     
     # Control vector (input)
     u=np.array([[(u_r+u_l)/2],[u_r-u_l]])
@@ -191,7 +192,7 @@ def state_trans_model(position, particles):
     # State transition model ground truth (no noise)
     coordinate_gt = np.matmul(A,coordinate_gt) + np.matmul(B,u)
     
-    polar_cord = convert_polar(new_posi)
+    polar_cord = get_polar(new_posi)
     
     for i in range(0,len(particles)):
 
@@ -221,7 +222,7 @@ def measurement_model():
     # Measurement noise vector
     n_k=np.asarray([[np.random.normal(0,0.001)],[np.random.normal(0,0.001)]])
     # Measurement equation 
-    z=convert_polar(coordinate_gt) + n_k
+    z=get_polar(coordinate_gt) + n_k
     
     polar_measure=z
 
@@ -302,9 +303,6 @@ while not crashed:
         if event.type == pygame.QUIT:
             crashed = True
     
-    # Debugging line
-    #print(t)
-    
     if flag_1==0:
         particles=create_particles()
         flag_1=1
@@ -342,7 +340,6 @@ while not crashed:
     
     # Draw cov ellipse
     radius = (mean_x*1000+400-(std_x*2000)/2, mean_y*1000+400-(2000*std_y)/2, std_x*2000, 2000*std_y)
-    #radius = (coordinate_particle[0,0]*1000+400-(std_x*2000)/2, (coordinate_particle[1,0])*1000+400-(2000*std_y)/2, 2000*std_x, 2000*std_y)
     pygame.draw.ellipse(gameDisplay, BROWN, radius, 2)  
     
     Pose = np.array([landmark[0,0] + [coordinate_polar[0,0]*math.cos(coordinate_polar[1,0])], landmark[1,0] + [coordinate_polar[0,0]*math.sin(coordinate_polar[1,0])]])
@@ -351,18 +348,22 @@ while not crashed:
     # Draw robot using desired image
     my_robot(coordinate_particle[0,0]*1000+400, (coordinate_particle[1,0])*1000+400)
     
-    # Draw trajectories
+    
+    # Draw measurement model trajectory in color RED
     if(Pose_measure[0,0]!=10):
         points_measure.append([Pose_measure[0,0]*1000+400,(Pose_measure[1,0])*1000+400])
         pygame.draw.lines(gameDisplay,RED,False,points_measure,5)
         coordinate_measure_x.append(Pose_measure[0,0])
         coordinate_measure_y.append(Pose_measure[1,0])
+    
+    # Draw other trajectories
+    # Draw PF estimated trajectory in color BLUE
     points.append([coordinate_particle[0,0]*1000+400,coordinate_particle[1,0]*1000+400])
-    points_gt.append([coordinate_gt[0,0]*1000+400,coordinate_gt[1,0]*1000+400])
-    #points_measure.append([coordinate_measure[0,0]*1000+400,(coordinate_measure[1,0]/2)*1000+400])
     pygame.draw.lines(gameDisplay,BLUE,False,points,5)
+    # Draw ground-truth trajectory in color GREEN
+    points_gt.append([coordinate_gt[0,0]*1000+400,coordinate_gt[1,0]*1000+400])
     pygame.draw.lines(gameDisplay,GREEN,False,points_gt,5)
-    #pygame.draw.lines(gameDisplay,RED,False,points_measure,5)
+    
 
     # For plotting
     coordinate_measure_x.append(coordinate_measure[0,0])
@@ -404,7 +405,7 @@ while not crashed:
     # Update counter    
     t+=1 
     
-# Plots 
+# Plots
 plt.plot(coordinate_measure_x, coordinate_measure_y, label='Measurement')
 plt.plot(coordinate_pred_x, coordinate_pred_y, label='Mean Particle Position')
 plt.xlabel("Iteation")
@@ -412,26 +413,6 @@ plt.ylabel("Value")
 plt.legend()
 plt.show()
 
-plt.plot(coordinate_measure_x,label='x values')
-plt.plot(coordinate_measure_y,label='y values')
-plt.xlabel("Iteation")
-plt.ylabel("Value")
-plt.legend()
-plt.show()
-
-plt.plot(coordinate_pred_x,label='x values')
-plt.plot(coordinate_pred_y,label='y values')
-plt.xlabel("Iteation")
-plt.ylabel("Value")
-plt.legend()
-plt.show()
-
-plt.plot(cov_hight,label='Covariance of x values')
-plt.plot(cov_width,label='Covariance of y values')
-plt.xlabel("Iteation")
-plt.ylabel("Value")
-plt.legend()
-plt.show()
 
 # Create GIF animation
 gif_filename = 'animation-2b.gif'
