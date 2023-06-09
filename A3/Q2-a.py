@@ -57,7 +57,7 @@ coordinate_pred_y=[]
 cov_width=[]
 cov_hight=[]
 
-# Function to draw r
+# Function to draw my robot
 def my_robot(x, y):
     gameDisplay.blit(bot_img, (x, y))
 
