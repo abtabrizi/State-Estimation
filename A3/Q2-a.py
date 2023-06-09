@@ -204,7 +204,7 @@ def measurement_model():
     C=np.array([[1,0,0],[0,2,0],[0,0,1]])
     # Measurement noise vector
     n_k=np.asarray([[np.random.normal(0,0.05)],[np.random.normal(0,0.075)],[0]])
-    # Measurement equation | Eq (3) in solution PDF
+    # Measurement equation 
     z=np.matmul(C,coordinate_gt) + n_k
     
     coordinate_measure=z
@@ -318,12 +318,14 @@ while not crashed:
     # Draw robot using desired image
     my_robot(coordinate_particle[0,0]*1000+400, (coordinate_particle[1,0]/2)*1000+400)
     
-    # Draw trajectories
+    # Draw trajectories of grounf-truth & PF estimate
     points.append([coordinate_particle[0,0]*1000+400,coordinate_particle[1,0]/2*1000+400])
     points_gt.append([coordinate_gt[0,0]*1000+400,coordinate_gt[1,0]*1000+400])
-    #points_measure.append([coordinate_measure[0,0]*1000+400,(coordinate_measure[1,0]/2)*1000+400])
     pygame.draw.lines(gameDisplay,BLUE,False,points,5)
     pygame.draw.lines(gameDisplay,GREEN,False,points_gt,5)
+    
+    # Draw measurement trajectory in color RED
+    #points_measure.append([coordinate_measure[0,0]*1000+400,(coordinate_measure[1,0]/2)*1000+400])
     #pygame.draw.lines(gameDisplay,RED,False,points_measure,5)
 
     # For plotting
@@ -339,11 +341,13 @@ while not crashed:
     ground_truth_legend = legend_font.render('Ground Truth', True, (0, 255, 0))
     pred_legend = legend_font.render('PF Estimation', True, (0, 0, 255))
     landmark_legend = legend_font.render('Landmark (M)', True, (0, 0, 0))
-    #pos_meas_legend = legend_font.render('Measurement', True, (255, 0, 0))
     gameDisplay.blit(ground_truth_legend, (320, 520))
     gameDisplay.blit(pred_legend, (320, 540))
     gameDisplay.blit(landmark_legend, (320, 560))
-    #gameDisplay.blit(pos_meas_legend, (750, 660))
+    
+    # Draw legend for measurement trajectory in color RED
+    #pos_meas_legend = legend_font.render('Measurement', True, (255, 0, 0))
+    #gameDisplay.blit(pos_meas_legend, (320, 580))
     
     # Draw circle pointer for gt trajectory
     pygame.draw.circle(gameDisplay,GREEN,(coordinate_gt[0,0]*1000+400,(coordinate_gt[1,0])*1000+400),7,10)
@@ -367,22 +371,8 @@ while not crashed:
     t+=1 
     
 # Plots 
-plt.plot(coordinate_measure_x,label='x values')
-plt.plot(coordinate_measure_y,label='y values')
-plt.xlabel("Iteation")
-plt.ylabel("Value")
-plt.legend()
-plt.show()
-
-plt.plot(coordinate_pred_x,label='x values')
-plt.plot(coordinate_pred_y,label='y values')
-plt.xlabel("Iteation")
-plt.ylabel("Value")
-plt.legend()
-plt.show()
-
-plt.plot(cov_hight,label='Covariance of x values')
-plt.plot(cov_width,label='Covariance of y values')
+plt.plot(coordinate_measure_x, coordinate_measure_y, label='Measurement')
+plt.plot(coordinate_pred_x, coordinate_pred_y, label='Mean Particle Position')
 plt.xlabel("Iteation")
 plt.ylabel("Value")
 plt.legend()
