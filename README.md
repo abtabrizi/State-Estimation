@@ -7,4 +7,5 @@ Toronto Metropolitan University, ON, CA
 Please refer to [solution PDF](A1/SolA1_Arash.pdf).
 # A2 Solutions  
 Please refer to [solution PDF](A2/SolA2_Arash.pdf).  
-
+# A3 Solutions  
+Please refer to [solution PDF](A3/SolA2_Arash.pdf).  
