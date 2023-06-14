@@ -82,7 +82,11 @@ plt.plot(dst_pts[:, 0], dst_pts[:, 1], 'ro', label='Destination')
 plt.plot(src_pts[inliers, 0], src_pts[inliers, 1], 'o', color='black', fillstyle='none', markersize=8, label='Inliers')
 outliers = np.delete(np.arange(len(src_pts)), inliers)
 plt.plot(src_pts[outliers, 0], src_pts[outliers, 1], 'x', color='black', markersize=7, label='Outliers')
-
+dst_inliers = dst_pts[inliers]
+dst_outliers = np.delete(dst_pts, inliers, axis=0)
+plt.plot(dst_inliers[:, 0], dst_inliers[:, 1], 'o', color='black', fillstyle='none', markersize=8)
+plt.plot(dst_outliers[:, 0], dst_outliers[:, 1], 'x', color='black', markersize=7)
+         
 # Connect inliers with dashed green lines
 for i in inliers:
     plt.plot([src_pts[i, 0], dst_pts[i, 0]], [src_pts[i, 1], dst_pts[i, 1]], 'g--')
