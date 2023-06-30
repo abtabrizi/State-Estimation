@@ -1,1 +1,1 @@
-Lit Rev. report PDF format and corresponding academic papers. 
+Lit Rev. report PDF and corresponding academic papers.   
