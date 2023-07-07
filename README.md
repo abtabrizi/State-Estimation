@@ -15,5 +15,3 @@ Please refer to [solution PDF](A4/SolA4_Arash.pdf).
 Please refer to [solution PDF](A5/SolA5_Arash.pdf).  
 # A6 Solutions  
 Please refer to [solution PDF](A6/SolA6_Arash.pdf).  
-# A7 Solutions  
-Please refer to [solution PDF](A7/SolA7_Arash.pdf).  
